@@ -1,6 +1,0 @@
-INFO:root:Binding to 127.0.0.1:55151
-INFO:root:Binding to 127.0.0.1:55151
-INFO:root:Got message from 127.0.0.2.
-INFO:root:127.0.0.4 is directly linked to me with cost 10
-INFO:root:Got message from 127.0.0.4.
-INFO:root:Trace answered. Hops: 127.0.0.1 => 127.0.0.4
