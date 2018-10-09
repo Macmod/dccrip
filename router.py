@@ -88,7 +88,7 @@ def process_command(inp):
     elif cmd == 'links': # Extra: show links
         rtable.show_links()
     elif cmd == 'plot': # Extra: plot topology
-        rtable.plot()
+        rtable.plot(DOTPATH + "/" + UDP_IP + ".pdf")
     else:
         logging.error('Invalid command `' + cmd + '`')
 
