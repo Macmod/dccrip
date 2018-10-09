@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 from graphviz import *
 from collections import defaultdict as dd
-from threading import Lock
 from message import *
 import logging
 
@@ -10,7 +9,6 @@ class RoutingTable:
         self.routes = dd(lambda: dd(list))
         self.links = dd(lambda: -1)
         self.ip = ip
-        self.lock = Lock()
 
         self.dot = Digraph()
         self.dot.node('root', label=self.ip, style='filled', color='lightgrey')

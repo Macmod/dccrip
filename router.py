@@ -1,7 +1,6 @@
 #!/usr/bin/python
 from message import Message
 from rtable import RoutingTable
-from threading import Thread, Lock
 from collections import defaultdict as dd
 import selectors
 import ipaddress
