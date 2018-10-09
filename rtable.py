@@ -50,11 +50,11 @@ class RoutingTable:
             routes = self.routes[dest].items()
             mincost = min(cost for via, cost in routes)
             gateways = [via for via, cost in routes if cost == mincost]
-            logging.info('Found ' + str(len(gateways)) + ' gateways with cost ' + str(mincost) + ': ' + ', '.join(gateways))
+            logging.info('Found ' + str(len(gateways)) + ' gateways with cost ' + str(mincost) + ': ' + ', '.join(gateways) + '.')
         elif dest in self.links:
             gateways = [dest]
             mincost = self.links[dest]
-            logging.info(dest + ' is directly linked to me with cost ' + str(mincost))
+            logging.info(dest + ' is directly linked to me with cost ' + str(mincost) + '.')
         else:
             mincost = -1
             gateways = []

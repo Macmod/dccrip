@@ -3,6 +3,7 @@ from message import Message
 from rtable import RoutingTable
 from threading import Thread, Lock
 from collections import defaultdict as dd
+import ipaddress
 import argparse
 import logging
 import random
@@ -28,7 +29,11 @@ args = parser.parse_args()
 UDP_IP = args.addr
 UDP_PORT = 55151
 
-# TODO: Validate args
+try:
+    ipaddress.IPv4Address(UDP_IP)
+except Exception as e:
+    logging.error('Malformed IP (' + str(e) + ')')
+    sys.exit(1)
 
 # Setup logging
 logging.basicConfig(filename=LOGPATH + '/' + UDP_IP + '.log', level=logging.DEBUG)
