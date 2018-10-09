@@ -1,0 +1,4 @@
+INFO:root:Binding to 127.0.0.1:55151
+ERROR:root:Invalid command `show`
+ERROR:root:Wrong command: missing args.
+ERROR:root:Wrong command: missing args.
