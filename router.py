@@ -158,19 +158,16 @@ def process_message():
 
         payload = json_msg['payload']
 
-        try:
-            payload_trace = json.loads(json_msg['payload'])
-            msg = Message('trace', src, dst, payload_trace)
+        msg = Message('data', src, dst, {'payload': payload})
 
-            logging.info('Trace answered. Hops: ' + ' => '.join(msg.hops))
-        except:
-            msg = Message('data', src, dst, {'payload': payload})
-
-            if msg.destination == UDP_IP:
-                logging.info('Got message for me. Ignoring...')
-                return
-            else:
-                send_message(msg.destination, msg)
+        if msg.destination == UDP_IP:
+            try:
+                trace = json.loads(json_msg['payload'])
+                logging.info('Trace answered. Hops: ' + ' => '.join(trace['hops']))
+            except:
+                logging.info('Got message for me. Payload: ' + payload)
+        else:
+            send_message(msg.destination, msg)
     elif mtype == 'update':
         if 'distances' not in json_msg:
             logging.error('Malformed message: no distances field.')
@@ -183,6 +180,8 @@ def process_message():
             return
         msg = Message('trace', src, dst, {'hops': json_msg['hops']})
         handle_trace(msg)
+    else:
+        logging.error('Invalid message type `' + mtype + '`.')
     #  except:
         #  print('Invalid message received (message is not well-formed json).')
     #  print(data)
