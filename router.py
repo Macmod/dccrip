@@ -138,7 +138,7 @@ def handle_messages():
 
         ip, port = addr
         if ip not in rtable.links:
-            logging.warning('Received message from a stranger: ' + ip)
+            logging.warning('Received message from a stranger: ' + ip + '.')
             continue
         else:
             logging.info('Got message from ' + ip + '.')
@@ -175,6 +175,9 @@ def handle_messages():
                 else:
                     send_message(msg.destination, msg)
         elif mtype == 'update':
+            if 'distances' not in json_msg:
+                logging.error('Malformed message: no distances field.')
+                continue
             msg = Message('update', src, dst, {'distances': json_msg['distances']})
             handle_update(ip, msg)
         elif mtype == 'trace':
