@@ -1,8 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 from message import Message
 from rtable import RoutingTable
 from threading import Thread, Lock
 from collections import defaultdict as dd
+import selectors
 import ipaddress
 import argparse
 import logging
@@ -53,7 +54,8 @@ def send_message(dest, msg):
         # Send
         sock.sendto(str(msg).encode(), (gateway, UDP_PORT))
 
-def process_command(inp):
+def process_command():
+    inp = sys.stdin.readline().rstrip()
     cmdline = inp.split()
     if len(cmdline) == 0:
         return
@@ -117,76 +119,76 @@ def handle_trace(trace):
         # Forward trace
         send_message(trace.destination, trace)
 
-def handle_messages():
+def process_message():
     global sock
 
-    while True:
-        data, addr = sock.recvfrom(MAXBUF)
-        data = data.decode()
+    data, addr = sock.recvfrom(MAXBUF)
+    data = data.decode()
 
-        ip, port = addr
-        if ip not in rtable.links:
-            logging.warning('Received message from a stranger: ' + ip + '.')
-            continue
-        else:
-            logging.info('Got message from ' + ip + '.')
+    ip, port = addr
+    if ip not in rtable.links:
+        logging.warning('Received message from a stranger: ' + ip + '.')
+        return
+    else:
+        logging.info('Got message from ' + ip + '.')
 
-        #  try:
-        json_msg = json.loads(data)
+    #  try:
+    json_msg = json.loads(data)
 
-        if 'source' not in json_msg or 'destination' not in json_msg or 'type' not in json_msg:
-            logging.error('Malformed message.')
-            continue
+    if 'source' not in json_msg or 'destination' not in json_msg or 'type' not in json_msg:
+        logging.error('Malformed message.')
+        return
 
-        mtype = json_msg['type']
-        src = json_msg['source']
-        dst = json_msg['destination']
+    mtype = json_msg['type']
+    src = json_msg['source']
+    dst = json_msg['destination']
 
-        if mtype == 'data':
-            if 'payload' not in json_msg:
-                logging.error('Malformed message: no payload found.')
-                continue
+    if mtype == 'data':
+        if 'payload' not in json_msg:
+            logging.error('Malformed message: no payload found.')
+            return
 
-            payload = json_msg['payload']
+        payload = json_msg['payload']
 
-            try:
-                payload_trace = json.loads(json_msg['payload'])
-                msg = Message('trace', src, dst, payload_trace)
+        try:
+            payload_trace = json.loads(json_msg['payload'])
+            msg = Message('trace', src, dst, payload_trace)
 
-                logging.info('Trace answered. Hops: ' + ' => '.join(msg.hops))
-            except:
-                msg = Message('data', src, dst, {'payload': payload})
+            logging.info('Trace answered. Hops: ' + ' => '.join(msg.hops))
+        except:
+            msg = Message('data', src, dst, {'payload': payload})
 
-                if msg.destination == UDP_IP:
-                    logging.info('Got message for me. Ignoring...')
-                    continue
-                else:
-                    send_message(msg.destination, msg)
-        elif mtype == 'update':
-            if 'distances' not in json_msg:
-                logging.error('Malformed message: no distances field.')
-                continue
-            msg = Message('update', src, dst, {'distances': json_msg['distances']})
-            handle_update(ip, msg)
-        elif mtype == 'trace':
-            if 'hops' not in json_msg:
-                logging.error('Malformed message: no hops field.')
-                continue
-            msg = Message('trace', src, dst, {'hops': json_msg['hops']})
-            handle_trace(msg)
-        #  except:
-            #  print('Invalid message received (message is not well-formed json).')
-        #  print(data)
+            if msg.destination == UDP_IP:
+                logging.info('Got message for me. Ignoring...')
+                return
+            else:
+                send_message(msg.destination, msg)
+    elif mtype == 'update':
+        if 'distances' not in json_msg:
+            logging.error('Malformed message: no distances field.')
+            return
+        msg = Message('update', src, dst, {'distances': json_msg['distances']})
+        handle_update(ip, msg)
+    elif mtype == 'trace':
+        if 'hops' not in json_msg:
+            logging.error('Malformed message: no hops field.')
+            return
+        msg = Message('trace', src, dst, {'hops': json_msg['hops']})
+        handle_trace(msg)
+    #  except:
+        #  print('Invalid message received (message is not well-formed json).')
+    #  print(data)
 
 if __name__ == '__main__':
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((UDP_IP, UDP_PORT))
     logging.info('Binding to ' + UDP_IP + ':' + str(UDP_PORT))
 
-    # Start message handling thread
-    thr = Thread(target=handle_messages)
-    thr.start()
+    selector = selectors.DefaultSelector()
+    selector.register(sys.stdin, selectors.EVENT_READ, process_command)
+    selector.register(sock, selectors.EVENT_READ, process_message)
 
     while True:
-        inp = input()
-        process_command(inp.rstrip())
+        for key, mask in selector.select():
+            callback = key.data
+            callback()
