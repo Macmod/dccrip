@@ -36,7 +36,13 @@ except Exception as e:
     sys.exit(1)
 
 # Setup logging
-logging.basicConfig(filename=LOGPATH + '/' + UDP_IP + '.log', level=logging.DEBUG)
+file_handler = logging.FileHandler(filename=LOGPATH + '/' + UDP_IP + '.log')
+stdout_handler = logging.StreamHandler(sys.stdout)
+logging.basicConfig(
+    level=logging.DEBUG,
+    handlers=[file_handler, stdout_handler],
+    format='[%(asctime)s] %(levelname)s: %(message)s',
+)
 
 # Routing table
 rtable = RoutingTable(UDP_IP)
