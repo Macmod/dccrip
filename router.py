@@ -85,7 +85,10 @@ def process_command(inp):
         trace = Message(cmd, UDP_IP, cmdline[1], {'hops': []})
         send_message(trace.destination, trace)
     elif cmd =='update': # Extra: explicit update command
-        send_update()
+        # Get update messages from routing table
+        # and send them to links
+        for update in rtable.get_updates():
+            sock.sendto(str(update).encode(), (update.destination, UDP_PORT))
     elif cmd == 'routes': # Extra: show topology
         rtable.show_routes()
     elif cmd == 'links': # Extra: show links
@@ -94,21 +97,6 @@ def process_command(inp):
         rtable.plot(DOTPATH + "/" + UDP_IP)
     else:
         logging.error('Invalid command `' + cmd + '`')
-
-def send_update():
-    global sock
-
-    # Send update to all links
-    for link in rtable.links:
-        # Create update message
-        msg = Message('update', UDP_IP, link, {'distances': rtable.links})
-
-        # Get distances applying split horizon
-        all_best_gateways = rtable.get_all_best_gateways(ignore=link)
-        msg.distances.update(all_best_gateways)
-
-        # Send messages
-        sock.sendto(str(msg).encode(), (link, UDP_PORT))
 
 def handle_update(ip, msg):
     # Clear routes with this gateway

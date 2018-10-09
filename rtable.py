@@ -2,6 +2,7 @@
 from graphviz import *
 from collections import defaultdict as dd
 from threading import Lock
+from message import *
 import logging
 
 class RoutingTable:
@@ -77,6 +78,18 @@ class RoutingTable:
                 distances[dest] = mincost
 
         return distances
+
+    def get_updates(self):
+        for link in self.links:
+            # Create update message
+            msg = Message('update', self.ip, link, {'distances': self.links})
+
+            # Get distances applying split horizon
+            all_best_gateways = self.get_all_best_gateways(ignore=link)
+            msg.distances.update(all_best_gateways)
+
+            # Yield update to caller
+            yield msg
 
     def add(self, dest, via, cost):
         if dest == self.ip or dest == via or via not in self.links:
