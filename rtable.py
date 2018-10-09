@@ -62,11 +62,18 @@ class RoutingTable:
 
         return mincost, gateways
 
-    def get_all_best_gateways(self):
+    def get_all_best_gateways(self, ignore=None):
         distances = {}
 
         for dest in self.routes:
             mincost, gateways = self.get_best_gateways(dest)
+
+            # Split horizon
+            if ignore:
+                gateways.remove(ignore)
+                if dest == ignore:
+                    continue
+
             if len(gateways) > 0:
                 distances[dest] = mincost
 

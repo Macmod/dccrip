@@ -47,7 +47,10 @@ def send_message(dest, msg):
     cost, gateways = rtable.get_best_gateways(dest)
 
     if len(gateways) > 0:
+        # Load balancing
         gateway = random.choice(gateways)
+
+        # Send
         sock.sendto(str(msg).encode(), (gateway, UDP_PORT))
 
 def process_command(inp):
@@ -99,7 +102,10 @@ def send_update():
     for link in rtable.links:
         # Create update message
         msg = Message('update', args.addr, link, {'distances': rtable.links})
-        msg.distances.update(rtable.get_all_best_gateways())
+
+        # Get distances applying split horizon
+        all_best_gateways = rtable.get_all_best_gateways(ignore=link)
+        msg.distances.update(all_best_gateways)
 
         # Send messages
         sock.sendto(str(msg).encode(), (link, UDP_PORT))
