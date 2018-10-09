@@ -89,11 +89,12 @@ class RoutingTable:
                 if via not in done:
                     done.add(via)
                     self.dot.node(via, label=via)
-                    self.dot.edge('root', via, label=self.links[via])
-                for cost in self.routes[dest][via]:
-                    self.dot.edge(via, dest, label=cost)
+                    self.dot.edge('root', via, label=str(self.links[via]))
 
-       self.dot.render(path)
+                for cost in self.routes[dest][via]:
+                    self.dot.edge(via, dest, label=str(cost))
+
+        self.dot.render(path)
 
     def show_links(self):
         print('ADDRESS\tWEIGHT')
