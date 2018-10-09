@@ -101,15 +101,16 @@ class RoutingTable:
         self.dot.render(path)
 
     def show_links(self):
-        print('ADDRESS\tWEIGHT')
+        print('\nADDRESS\tWEIGHT')
         for dest in self.links:
             print(dest + '\t' + str(self.links[dest]))
+        print()
 
     def show_routes(self):
         print(self)
 
     def __str__(self):
-        tbl = 'DESTINATION\tGATEWAY IP\tCOST\n'
+        tbl = '\nDESTINATION\tGATEWAY IP\tCOST\n'
         for dest in self.routes:
             for via in self.routes[dest]:
                 for cost in self.routes[dest][via]:
