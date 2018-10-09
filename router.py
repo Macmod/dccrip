@@ -32,7 +32,7 @@ UDP_PORT = 55151
 try:
     ipaddress.IPv4Address(UDP_IP)
 except Exception as e:
-    logging.error('Malformed IP (' + str(e) + ')')
+    logging.error(str(e))
     sys.exit(1)
 
 # Setup logging
