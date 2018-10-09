@@ -89,7 +89,7 @@ class RoutingTable:
         for dest in self.routes:
             for via in self.routes[dest]:
                 for cost in self.routes[dest][via]:
-                    self.dot.edge(via, dest, label=str(cost))
+                    self.dot.edge(via, dest, label=str(cost - self.links[via]))
 
         self.dot.render(path)
 
