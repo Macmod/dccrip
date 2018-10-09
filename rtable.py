@@ -82,15 +82,12 @@ class RoutingTable:
         return True
 
     def plot(self, path):
-        done = set()
-        for dest in self.routes:
-            done.add(dest)
-            for via in self.routes[dest]:
-                if via not in done:
-                    done.add(via)
-                    self.dot.node(via, label=via)
-                    self.dot.edge('root', via, label=str(self.links[via]))
+        for link in self.links:
+            self.dot.node(link, label=link)
+            self.dot.edge('root', link, label=str(self.links[link]))
 
+        for dest in self.routes:
+            for via in self.routes[dest]:
                 for cost in self.routes[dest][via]:
                     self.dot.edge(via, dest, label=str(cost))
 
