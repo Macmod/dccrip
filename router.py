@@ -17,12 +17,12 @@ MAXBUF = 2**16
 
 # Arg parse
 parser = argparse.ArgumentParser(description='DCCRIP Router')
-parser.add_argument('--addr', metavar='ADDR', type=str,
-                    required=True, help='Router address')
-parser.add_argument('--update-period', metavar='N', type=int,
-                    required=True, help='send updates every N seconds')
-parser.add_argument('--startup-commands', metavar='FILE',
-                    help='file to read startup commands from')
+parser.add_argument('addr', metavar='ADDR', type=str,
+                    help='Router address.')
+parser.add_argument('period', metavar='PERIOD', type=int,
+                    help='Send updates every N seconds.')
+parser.add_argument('startup', nargs='?', metavar='FILE',
+                    help='File to read startup commands from.')
 
 args = parser.parse_args()
 
@@ -82,7 +82,7 @@ def process_command(inp):
             logging.error('Wrong command: missing args.')
             return
 
-        trace = Message(cmd, args.addr, cmdline[1], {'hops': []})
+        trace = Message(cmd, UDP_IP, cmdline[1], {'hops': []})
         send_message(trace.destination, trace)
     elif cmd =='update': # Extra: explicit update command
         send_update()
@@ -101,7 +101,7 @@ def send_update():
     # Send update to all links
     for link in rtable.links:
         # Create update message
-        msg = Message('update', args.addr, link, {'distances': rtable.links})
+        msg = Message('update', UDP_IP, link, {'distances': rtable.links})
 
         # Get distances applying split horizon
         all_best_gateways = rtable.get_all_best_gateways(ignore=link)
