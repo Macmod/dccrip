@@ -8,11 +8,11 @@ tmux rename-window 'Star Topology'
 
 tmux split-window -h './router.py 127.0.0.1 3'
 
+tmux split-window -v -t 0 './router.py 127.0.0.4 3'
+
+tmux split-window -v -t 1 './router.py 127.0.0.5 3'
+
 tmux split-window -v -t 0 './router.py 127.0.0.3 3'
-
-tmux split-window -v -t 1 './router.py 127.0.0.4 3'
-
-tmux split-window -v -t 0 './router.py 127.0.0.5 3'
 
 # Send commands
 tmux send-keys -t 0 'add 127.0.0.1 10' 'C-m'
