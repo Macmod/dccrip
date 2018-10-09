@@ -53,8 +53,7 @@ def send_message(dest, msg):
         # Send
         sock.sendto(str(msg).encode(), (gateway, UDP_PORT))
 
-def process_command():
-    inp = sys.stdin.readline().rstrip()
+def handle_command(inp):
     cmdline = inp.split()
     if len(cmdline) == 0:
         return
@@ -98,6 +97,10 @@ def process_command():
         rtable.plot(DOTPATH + "/" + UDP_IP)
     else:
         logging.error('Invalid command `' + cmd + '`')
+
+def process_stdin():
+    inp = sys.stdin.readline().rstrip()
+    handle_command(inp)
 
 def handle_update(ip, msg):
     # Clear routes with this gateway
@@ -183,8 +186,15 @@ if __name__ == '__main__':
     sock.bind((UDP_IP, UDP_PORT))
     logging.info('Binding to ' + UDP_IP + ':' + str(UDP_PORT))
 
+    if args.startup:
+        logging.info('Running startup commands...')
+
+        startup = open(args.startup, 'r')
+        for line in startup:
+            handle_command(line.rstrip())
+
     selector = selectors.DefaultSelector()
-    selector.register(sys.stdin, selectors.EVENT_READ, process_command)
+    selector.register(sys.stdin, selectors.EVENT_READ, process_stdin)
     selector.register(sock, selectors.EVENT_READ, process_message)
 
     while True:
