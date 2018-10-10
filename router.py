@@ -15,38 +15,6 @@ LOGPATH = 'logs'
 DOTPATH = 'dot'
 MAXBUF = 2**16
 
-# Arg parse
-parser = argparse.ArgumentParser(description='DCCRIP Router')
-parser.add_argument('addr', metavar='ADDR', type=str,
-                    help='Router address.')
-parser.add_argument('period', metavar='PERIOD', type=int,
-                    help='Send updates every N seconds.')
-parser.add_argument('startup', nargs='?', metavar='FILE',
-                    help='File to read startup commands from.')
-
-args = parser.parse_args()
-
-UDP_IP = args.addr
-UDP_PORT = 55151
-
-try:
-    ipaddress.IPv4Address(UDP_IP)
-except Exception as e:
-    logging.error(str(e))
-    sys.exit(1)
-
-# Setup logging
-file_handler = logging.FileHandler(filename=LOGPATH + '/' + UDP_IP + '.log')
-stdout_handler = logging.StreamHandler(sys.stdout)
-logging.basicConfig(
-    level=logging.DEBUG,
-    handlers=[file_handler, stdout_handler],
-    format='[%(asctime)s] %(levelname)s: %(message)s',
-)
-
-# Routing table
-rtable = RoutingTable(UDP_IP)
-
 def send_message(dest, msg):
     global sock, rtable
 
@@ -187,6 +155,38 @@ def process_message():
     #  print(data)
 
 if __name__ == '__main__':
+    # Arg parse
+    parser = argparse.ArgumentParser(description='DCCRIP Router')
+    parser.add_argument('addr', metavar='ADDR', type=str,
+                        help='Router address.')
+    parser.add_argument('period', metavar='PERIOD', type=int,
+                        help='Send updates every N seconds.')
+    parser.add_argument('startup', nargs='?', metavar='FILE',
+                        help='File to read startup commands from.')
+
+    args = parser.parse_args()
+
+    UDP_IP = args.addr
+    UDP_PORT = 55151
+
+    try:
+        ipaddress.IPv4Address(UDP_IP)
+    except Exception as e:
+        logging.error(str(e))
+        sys.exit(1)
+
+    # Setup logging
+    file_handler = logging.FileHandler(filename=LOGPATH + '/' + UDP_IP + '.log')
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    logging.basicConfig(
+        level=logging.DEBUG,
+        handlers=[file_handler, stdout_handler],
+        format='[%(asctime)s] %(levelname)s: %(message)s',
+    )
+
+    # Routing table
+    rtable = RoutingTable(UDP_IP)
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((UDP_IP, UDP_PORT))
     logging.info('Binding to ' + UDP_IP + ':' + str(UDP_PORT))
