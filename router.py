@@ -24,11 +24,11 @@ def send_message(dest, msg):
         # Load balancing
         gateway = random.choice(gateways)
 
-        msg_str = str(msg).encode()
+        msg_str = str(msg)
         logging.info('Sending message to ' + gateway + ': ' + msg_str)
 
         # Send
-        sock.sendto(msg_str, (gateway, UDP_PORT))
+        sock.sendto(msg_str.encode(), (gateway, UDP_PORT))
 
 def handle_command(inp):
     cmdline = inp.split()
