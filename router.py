@@ -2,6 +2,7 @@
 from message import Message
 from rtable import RoutingTable
 from collections import defaultdict as dd
+from threading import Timer, Lock
 import selectors
 import ipaddress
 import argparse
@@ -29,6 +30,17 @@ def send_message(dest, msg):
 
         # Send
         sock.sendto(msg_str.encode(), (gateway, UDP_PORT))
+
+def broadcast_update():
+    global sock, rtable, args, update_timer
+
+    # Get update messages from routing table
+    # and send them to links
+    for update in rtable.get_updates():
+        sock.sendto(str(update).encode(), (update.destination, UDP_PORT))
+
+    update_timer = Timer(args.period, broadcast_update)
+    update_timer.start()
 
 def handle_command(inp):
     cmdline = inp.split()
@@ -62,10 +74,7 @@ def handle_command(inp):
         trace = Message(cmd, UDP_IP, cmdline[1], {'hops': []})
         send_message(trace.destination, trace)
     elif cmd =='update': # Extra: explicit update command
-        # Get update messages from routing table
-        # and send them to links
-        for update in rtable.get_updates():
-            sock.sendto(str(update).encode(), (update.destination, UDP_PORT))
+        broadcast_update()
     elif cmd == 'routes': # Extra: show topology
         rtable.show_routes()
     elif cmd == 'links': # Extra: show links
@@ -172,12 +181,6 @@ if __name__ == '__main__':
     UDP_IP = args.addr
     UDP_PORT = 55151
 
-    try:
-        ipaddress.IPv4Address(UDP_IP)
-    except Exception as e:
-        logging.error(str(e))
-        sys.exit(1)
-
     # Setup logging
     file_handler = logging.FileHandler(filename=LOGPATH + '/' + UDP_IP + '.log')
     stdout_handler = logging.StreamHandler(sys.stdout)
@@ -186,6 +189,16 @@ if __name__ == '__main__':
         handlers=[file_handler, stdout_handler],
         format='[%(asctime)s] %(levelname)s: %(message)s',
     )
+
+    try:
+        ipaddress.IPv4Address(UDP_IP)
+    except ValueError as e:
+        logging.error(str(e))
+        sys.exit(1)
+
+    if args.period <= 0:
+        logging.error('`' + str(args.period) + '` is not a valid update period.')
+        sys.exit(1)
 
     # Routing table
     rtable = RoutingTable(UDP_IP)
@@ -204,6 +217,9 @@ if __name__ == '__main__':
     selector = selectors.DefaultSelector()
     selector.register(sys.stdin, selectors.EVENT_READ, process_stdin)
     selector.register(sock, selectors.EVENT_READ, process_message)
+
+    update_timer = Timer(args.period, broadcast_update)
+    update_timer.start()
 
     while True:
         for key, mask in selector.select():

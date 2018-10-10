@@ -36,7 +36,7 @@ class RoutingTable:
         return True
 
     def del_link(self, ip):
-        if ip in links:
+        if ip in self.links:
             del self.links[ip]
 
     def update(self, via, distances):
