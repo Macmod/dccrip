@@ -111,8 +111,11 @@ def process_message():
     else:
         logging.info('Got message from ' + ip + '.')
 
-    #  try:
-    json_msg = json.loads(data)
+    try:
+        json_msg = json.loads(data)
+    except:
+        logging.error('Invalid message received (message is not a valid json).')
+        return
 
     if 'source' not in json_msg or 'destination' not in json_msg or 'type' not in json_msg:
         logging.error('Malformed message.')
@@ -153,9 +156,6 @@ def process_message():
         handle_trace(msg)
     else:
         logging.error('Invalid message type `' + mtype + '`.')
-    #  except:
-        #  print('Invalid message received (message is not well-formed json).')
-    #  print(data)
 
 if __name__ == '__main__':
     # Arg parse
