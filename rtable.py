@@ -7,7 +7,7 @@ import logging
 
 class RoutingTable:
     def __init__(self, ip, timeout):
-        self.routes = dd(lambda: dd(list))
+        self.routes = dd(lambda: dd(lambda: -1))
         self.links = dd(lambda: -1)
         #  self.timers = dd(lambda: -1)
         self.timeout = timeout
@@ -45,7 +45,7 @@ class RoutingTable:
 
     def update(self, via, distances):
         for dest in distances:
-                self.add_route(dest, via, distances[dest])
+            self.add_route(dest, via, distances[dest])
 
         for dest in self.routes:
             if via in self.routes[dest]:
@@ -60,17 +60,23 @@ class RoutingTable:
 
         if dest in self.routes:
             routes = self.routes[dest].items()
-            mincosts = [min(costs) for via, costs in routes if len(costs) > 0]
-            if len(mincosts) > 0:
-                mincost = min(mincosts)
-                gateways = [via for via, costs in routes if min(costs) == mincost]
-                logging.info('Found ' + str(len(gateways)) + ' gateways with cost ' + str(mincost) + ': ' + ', '.join(gateways) + '.')
-        elif dest in self.links:
-            gateways = [dest]
-            mincost = self.links[dest]
+            costs = [cost for via, cost in routes if cost != -1]
+
+            if len(costs) > 0:
+                mincost = min(costs)
+                gateways = [via for via, cost in routes if cost == mincost]
+
+        if dest in self.links:
+            if mincost == -1 or self.links[dest] < mincost:
+                mincost = self.links[dest]
+                gateways = [dest]
+            elif self.links[dest] == mincost:
+                gateways.append(dest)
             logging.info(dest + ' is directly linked to me with cost ' + str(mincost) + '.')
 
-        if mincost == -1:
+        if mincost != -1:
+            logging.info('Found ' + str(len(gateways)) + ' gateways with cost ' + str(mincost) + ': ' + ', '.join(gateways) + '.')
+        else:
             logging.info('No route to ' + dest + '.')
 
         return mincost, gateways
@@ -78,7 +84,8 @@ class RoutingTable:
     def get_all_best_gateways(self, ignore=None):
         distances = {}
 
-        for dest in self.routes:
+        known_dests = self.routes.keys() | self.links.keys()
+        for dest in known_dests:
             mincost, gateways = self.get_best_gateways(dest)
 
             # Split horizon
@@ -95,12 +102,11 @@ class RoutingTable:
 
     def get_updates(self):
         for link in self.links:
-            # Create update message
-            msg = Message('update', self.ip, link, {'distances': self.links})
-
             # Get distances applying split horizon
             all_best_gateways = self.get_all_best_gateways(ignore=link)
-            msg.distances.update(all_best_gateways)
+
+            # Create update message
+            msg = Message('update', self.ip, link, {'distances': all_best_gateways})
 
             # Yield update to caller
             yield msg
@@ -110,12 +116,7 @@ class RoutingTable:
             return False
 
         route_cost = self.links[via] + cost
-
-        if route_cost not in self.routes[dest][via]:
-            self.routes[dest][via].append(route_cost)
-
-        filtered_routes = filter(lambda x: x >= route_cost, self.routes[dest][via])
-        self.routes[dest][via] = list(filtered_routes)
+        self.routes[dest][via] = route_cost
 
         return True
 
@@ -126,11 +127,10 @@ class RoutingTable:
 
         for dest in self.routes:
             for via in self.routes[dest]:
-                for cost in self.routes[dest][via]:
-                    total_cost = cost - self.links[via]
-                    self.dot.edge(
-                        via, dest, label=str(total_cost), style='dashed'
-                    )
+                total_cost = self.routes[dest][via] - self.links[via]
+                self.dot.edge(
+                    via, dest, label=str(total_cost), style='dashed'
+                )
 
         self.dot.render(path)
 
@@ -147,7 +147,7 @@ class RoutingTable:
         tbl = '\nDESTINATION\tGATEWAY IP\tCOST\n'
         for dest in self.routes:
             for via in self.routes[dest]:
-                for cost in self.routes[dest][via]:
-                    tbl += dest + '\t' + via + '\t' + str(cost) + '\n'
+                cost = self.routes[dest][via]
+                tbl += dest + '\t' + via + '\t' + str(cost) + '\n'
 
         return tbl
