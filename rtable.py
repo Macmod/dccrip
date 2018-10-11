@@ -121,6 +121,7 @@ class RoutingTable:
         return True
 
     def plot(self, path):
+        self.dot.clear()
         for link in self.links:
             self.dot.node(link, label=link)
             self.dot.edge('root', link, label=str(self.links[link]))
