@@ -84,17 +84,6 @@ def handle_command(inp):
     else:
         logging.error('Invalid command `' + cmd + '`')
 
-def process_stdin():
-    inp = sys.stdin.readline().rstrip()
-    handle_command(inp)
-
-def handle_update(ip, msg):
-    # Clear routes with this gateway
-    rtable.clear(ip)
-
-    # Update routes with this gateway
-    rtable.update(ip, msg.distances)
-
 def handle_trace(trace):
     trace.hops.append(UDP_IP)
 
@@ -107,6 +96,10 @@ def handle_trace(trace):
         # Forward trace
         send_message(trace.destination, trace)
 
+def process_stdin():
+    inp = sys.stdin.readline().rstrip()
+    handle_command(inp)
+
 def process_message():
     global sock
 
@@ -115,10 +108,10 @@ def process_message():
 
     ip, port = addr
     if ip not in rtable.links:
-        logging.warning('Received message from a stranger: ' + ip + '.')
+        logging.warning('Ignoring message from stranger: ' + ip + '.')
         return
     else:
-        logging.info('Got message from ' + ip + '.')
+        logging.info('Message from ' + ip + ': ' + data)
 
     try:
         json_msg = json.loads(data)
@@ -155,12 +148,16 @@ def process_message():
         if 'distances' not in json_msg:
             logging.error('Malformed message: no distances field.')
             return
-        msg = Message('update', src, dst, {'distances': json_msg['distances']})
-        handle_update(ip, msg)
+        elif src != ip:
+            logging.error(ip + ' tried to spoof the update! Ignoring...')
+            return
+
+        rtable.update(ip, json_msg['distances'])
     elif mtype == 'trace':
         if 'hops' not in json_msg:
             logging.error('Malformed message: no hops field.')
             return
+
         msg = Message('trace', src, dst, {'hops': json_msg['hops']})
         handle_trace(msg)
     else:
@@ -178,6 +175,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    PERIOD = args.period
     UDP_IP = args.addr
     UDP_PORT = 55151
 
@@ -201,7 +199,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Routing table
-    rtable = RoutingTable(UDP_IP)
+    rtable = RoutingTable(UDP_IP, PERIOD)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((UDP_IP, UDP_PORT))
