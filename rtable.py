@@ -75,7 +75,7 @@ class RoutingTable:
             logging.info(dest + ' is directly linked to me with cost ' + str(mincost) + '.')
 
         if mincost != -1:
-            logging.info('Found ' + str(len(gateways)) + ' gateways with cost ' + str(mincost) + ': ' + ', '.join(gateways) + '.')
+            logging.info('Found ' + str(len(gateways)) + ' gateways to ' + dest + ' with cost ' + str(mincost) + ': ' + ', '.join(gateways) + '.')
         else:
             logging.warning('No route to ' + dest + '.')
 

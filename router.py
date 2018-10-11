@@ -52,7 +52,7 @@ class Router():
                 self.handle_command(line.rstrip())
 
     def start(self):
-        self.update_timer = Timer(self.update_time, self.broadcast_update)
+        self.update_timer = Timer(self.update_time, self.__broadcast_update_callback)
         self.update_timer.start()
 
         while True:
@@ -73,18 +73,21 @@ class Router():
             # Send
             self.sock.sendto(msg_str.encode(), (gateway, self.port))
 
-    def broadcast_update(self):
+    def __broadcast_update_callback(self):
         self.lock.acquire()
 
+        self.broadcast_update()
+
+        self.update_timer = Timer(self.update_time, self.__broadcast_update_callback)
+        self.update_timer.start()
+
+        self.lock.release()
+
+    def broadcast_update(self):
         # Get update messages from routing table
         # and send them to links
         for update in self.rtable.get_updates():
             self.sock.sendto(str(update).encode(), (update.destination, self.port))
-
-        self.update_timer = Timer(self.update_time, self.broadcast_update)
-        self.update_timer.start()
-
-        self.lock.release()
 
     def handle_command(self, inp):
         cmdline = inp.split()
@@ -228,6 +231,7 @@ if __name__ == '__main__':
 
     UPDATE_TIME = args.period
     UDP_IP = args.addr
+    STARTUP = args.startup
     UDP_PORT = 55151
 
     # Validate parameters
@@ -237,10 +241,10 @@ if __name__ == '__main__':
         logging.error(str(e))
         sys.exit(1)
 
-    if args.period <= 0:
-        logging.error('`' + str(args.period) + '` is not a valid update period.')
+    if UPDATE_TIME <= 0:
+        logging.error('`' + str(UPDATE_TIME) + '` is not a valid update period.')
         sys.exit(1)
 
     # Start router
-    router = Router(UDP_IP, UDP_PORT, UPDATE_TIME, 4*UPDATE_TIME)
+    router = Router(UDP_IP, UDP_PORT, UPDATE_TIME, 4*UPDATE_TIME, startupfile=STARTUP)
     router.start()
