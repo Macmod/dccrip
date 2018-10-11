@@ -118,7 +118,7 @@ class Router():
             trace = Message(cmd, UDP_IP, cmdline[1], {'hops': []})
             self.send_message(trace.destination, trace)
         elif cmd =='update': # Extra: explicit update command
-            broadcast_update()
+            self.broadcast_update()
         elif cmd == 'routes': # Extra: show topology
             self.rtable.show_routes()
         elif cmd == 'links': # Extra: show links
