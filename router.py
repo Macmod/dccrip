@@ -149,6 +149,7 @@ def process_message():
             logging.error('Malformed message: no distances field.')
             return
         elif src != ip:
+            # Extra: anti-spoofing of update messages
             logging.error(ip + ' tried to spoof the update! Ignoring...')
             return
 
@@ -184,7 +185,7 @@ if __name__ == '__main__':
     stdout_handler = logging.StreamHandler(sys.stdout)
     logging.basicConfig(
         level=logging.DEBUG,
-        handlers=[file_handler, stdout_handler],
+        handlers=[stdout_handler, file_handler],
         format='[%(asctime)s] %(levelname)s: %(message)s',
     )
 
