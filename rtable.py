@@ -54,22 +54,25 @@ class RoutingTable:
 
         self.del_routes(ip)
 
-    def __del_routes_closure(self, via):
+    def __del_routes_closure(self, ip):
         def destroyer():
             self.lock.acquire()
-            self.del_routes(via)
+            self.del_routes_via(ip)
             self.lock.release()
 
         return destroyer
 
-    def del_routes(self, via):
+    def del_route(self, dest, via):
+        if dest in self.routes and via in self.routes[dest]:
+            del self.routes[dest][via]
+
+            if not self.routes[dest]:
+                del self.routes[dest]
+
+    def del_routes_via(self, via):
         dests = list(self.routes.keys())
         for dest in dests:
-            if via in self.routes[dest]:
-                del self.routes[dest][via]
-
-                if not self.routes[dest]:
-                    del self.routes[dest]
+            self.del_route(dest, via)
 
     def update(self, via, distances):
         self.timers[via].cancel()
@@ -80,12 +83,13 @@ class RoutingTable:
         for dest in distances:
             self.add_route(dest, via, distances[dest])
 
-        for dest in self.routes:
+        dests = list(self.routes.keys())
+        for dest in dests:
             if via in self.routes[dest]:
                 # For each of my routes using this gateway, if the destination
                 # is not mentioned in distances, the route disappeared.
                 if dest not in distances:
-                    del self.routes[dest][via]
+                    self.del_route(dest, via)
 
     def get_best_gateways(self, dest):
         mincost = -1
