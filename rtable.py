@@ -9,7 +9,7 @@ class RoutingTable:
     def __init__(self, ip, timeout):
         self.routes = dd(lambda: dd(lambda: -1))
         self.links = dd(lambda: -1)
-        #  self.timers = dd(lambda: -1)
+        self.timers = dd(lambda: -1)
         self.timeout = timeout
         self.ip = ip
 
@@ -29,21 +29,26 @@ class RoutingTable:
 
         self.links[ip] = weight
 
-        #  self.timers[ip] = Timer(self.timeout, lambda: self.del_link(ip))
-        #  self.timers[ip].start()
+        self.timers[ip] = Timer(self.timeout, lambda: self.del_link(ip))
+        self.timers[ip].start()
 
         return True
 
     def del_link(self, ip):
         if ip in self.links:
             del self.links[ip]
-            #  del self.timers[ip]
+            del self.timers[ip]
 
         for dest in self.routes:
             if ip in self.routes[dest]:
                 del self.routes[dest][ip]
 
     def update(self, via, distances):
+        self.timers[via].cancel()
+
+        self.timers[via] = Timer(self.timeout, lambda: self.del_link(ip))
+        self.timers[via].start()
+
         for dest in distances:
             self.add_route(dest, via, distances[dest])
 

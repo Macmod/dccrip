@@ -13,7 +13,7 @@ import json
 import sys
 
 class Router():
-    def __init__(self, ip, port, removal_time, update_time, maxbuf=2**16,
+    def __init__(self, ip, port, update_time, removal_time, maxbuf=2**16,
                  logpath='logs', dotpath='dot', startupfile=None):
         self.ip = ip
         self.port = port
