@@ -142,8 +142,8 @@ class Router():
         elif cmd == 'links': # Extra: show links
             self.rtable.show_links()
         elif cmd == 'time': # Extra: show time until next update
-            delta = time.time() - self.last_update
-            print("{:0>8} left".format(str(datetime.timedelta(seconds=delta))))
+            delta = self.update_time - (time.time() - self.last_update)
+            print("{:0>8} until update".format(str(datetime.timedelta(seconds=delta))))
         elif cmd == 'plot': # Extra: plot topology
             self.rtable.plot(self.dotpath + "/" + self.ip)
         else:
