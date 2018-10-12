@@ -184,11 +184,13 @@ class Router():
             msg = Message('data', src, dst, {'payload': payload})
 
             if msg.destination == self.ip:
+                logging.info('Data from ' + msg.source + ': ' + payload)
+
                 try:
                     trace = json.loads(json_msg['payload'])
                     logging.info('Trace answered. Hops: ' + ' => '.join(trace['hops']))
                 except:
-                    logging.info('Got message for me. Payload: ' + payload)
+                    pass
             else:
                 self.send_message(msg)
         elif mtype == 'update':

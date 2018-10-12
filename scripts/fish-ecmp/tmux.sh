@@ -5,6 +5,6 @@ set -eu
 exe="../../router.py"
 
 for i in $(seq 1 6) ; do
-    tmux split-pane -v $exe 127.0.1.$i 30 $i.txt &
+    tmux split-pane -v $exe 127.0.1.$i 180 $i.txt &
     tmux select-layout even-vertical
 done
