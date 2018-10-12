@@ -190,7 +190,7 @@ class Router():
                 logging.error(ip + ' tried to spoof the update! Ignoring...')
                 return
 
-            self.rtable.update(ip, json_msg['distances'])
+            self.rtable.update_routes(ip, json_msg['distances'])
         elif mtype == 'trace':
             if 'hops' not in json_msg:
                 logging.error('Malformed message: no hops field.')

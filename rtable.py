@@ -54,14 +54,6 @@ class RoutingTable:
 
         self.del_routes(ip)
 
-    def __del_routes_closure(self, ip):
-        def destroyer():
-            self.lock.acquire()
-            self.del_routes_via(ip)
-            self.lock.release()
-
-        return destroyer
-
     def del_route(self, dest, via):
         if dest in self.routes and via in self.routes[dest]:
             del self.routes[dest][via]
@@ -74,7 +66,15 @@ class RoutingTable:
         for dest in dests:
             self.del_route(dest, via)
 
-    def update(self, via, distances):
+    def __del_routes_closure(self, ip):
+        def destroyer():
+            self.lock.acquire()
+            self.del_routes_via(ip)
+            self.lock.release()
+
+        return destroyer
+
+    def update_routes(self, via, distances):
         self.timers[via].cancel()
 
         self.timers[via] = Timer(self.timeout, self.__del_routes_closure(via))
