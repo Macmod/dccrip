@@ -59,18 +59,22 @@ class Router():
                 callback = key.data
                 callback()
 
-    def send_message(self, dest, msg):
-        cost, gateways = self.rtable.get_best_gateways(dest)
+    def send_message(self, msg):
+        cost, gateways = self.rtable.get_best_gateways(msg.destination)
 
-        if len(gateways) > 0:
-            # Load balancing
-            gateway = random.choice(gateways)
+        if len(gateways) == 0:
+            return False
 
-            msg_str = str(msg)
-            logging.info('Sending message to ' + gateway + ': ' + msg_str)
+        # Load balancing
+        gateway = random.choice(gateways)
 
-            # Send
-            self.sock.sendto(msg_str.encode(), (gateway, self.port))
+        msg_str = str(msg)
+        logging.info('Sending message to ' + msg.destination + ' via ' + gateway + ': ' + msg_str)
+
+        # Send
+        self.sock.sendto(msg_str.encode(), (gateway, self.port))
+
+        return True
 
     def __broadcast_update_callback(self):
         self.lock.acquire()
@@ -118,7 +122,7 @@ class Router():
                 return
 
             trace = Message(cmd, UDP_IP, cmdline[1], {'hops': []})
-            self.send_message(trace.destination, trace)
+            self.send_message(trace)
         elif cmd =='update': # Extra: explicit update command
             self.broadcast_update()
         elif cmd == 'routes': # Extra: show topology
@@ -137,10 +141,16 @@ class Router():
             # Tunnel answer
             answer = Message('data', trace.destination, trace.source,
                              {'payload': str(trace)})
-            self.send_message(trace.source, answer)
+            self.send_message(answer)
         else:
             # Forward trace
-            self.send_message(trace.destination, trace)
+            forwarded = self.send_message(trace)
+            if not forwarded:
+                noroute = Message('data', self.ip, trace.source, {
+                    'payload': 'Hop ' + self.ip + ' has no route to ' + trace.destination + '.'
+                })
+
+                self.send_message(noroute)
 
     def handle_message(self, data, addr):
         ip, port = addr
@@ -180,7 +190,7 @@ class Router():
                 except:
                     logging.info('Got message for me. Payload: ' + payload)
             else:
-                self.send_message(msg.destination, msg)
+                self.send_message(msg)
         elif mtype == 'update':
             if 'distances' not in json_msg:
                 logging.error('Malformed message: no distances field.')

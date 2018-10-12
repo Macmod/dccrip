@@ -52,7 +52,7 @@ class RoutingTable:
             self.timers[ip].cancel()
             del self.timers[ip]
 
-        self.del_routes(ip)
+        self.del_routes_via(ip)
 
     def del_route(self, dest, via):
         if dest in self.routes and via in self.routes[dest]:
