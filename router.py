@@ -63,6 +63,13 @@ class Router():
         cost, gateways = self.rtable.get_best_gateways(msg.destination)
 
         if len(gateways) == 0:
+            if msg.type == 'data' or msg.type == 'trace':
+                noroute = Message('data', self.ip, msg.source, {
+                    'payload': 'Hop ' + self.ip + ' has no route to ' + trace.destination + '.'
+                })
+
+                self.send_message(noroute)
+
             return False
 
         # Load balancing
@@ -144,13 +151,7 @@ class Router():
             self.send_message(answer)
         else:
             # Forward trace
-            forwarded = self.send_message(trace)
-            if not forwarded:
-                noroute = Message('data', self.ip, trace.source, {
-                    'payload': 'Hop ' + self.ip + ' has no route to ' + trace.destination + '.'
-                })
-
-                self.send_message(noroute)
+            self.send_message(trace)
 
     def handle_message(self, data, addr):
         ip, port = addr
