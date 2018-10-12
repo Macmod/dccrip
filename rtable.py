@@ -46,7 +46,7 @@ class RoutingTable:
     def update(self, via, distances):
         self.timers[via].cancel()
 
-        self.timers[via] = Timer(self.timeout, lambda: self.del_link(ip))
+        self.timers[via] = Timer(self.timeout, lambda: self.del_link(via))
         self.timers[via].start()
 
         for dest in distances:
