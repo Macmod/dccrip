@@ -5,11 +5,13 @@ from collections import defaultdict as dd
 from threading import Timer, Lock
 import selectors
 import ipaddress
+import datetime
 import argparse
 import logging
 import random
 import socket
 import json
+import time
 import sys
 
 class Router():
@@ -19,6 +21,7 @@ class Router():
         self.port = port
         self.removal_time = removal_time
         self.update_time = update_time
+        self.last_update = time.time()
         self.maxbuf = maxbuf
         self.logpath = logpath
         self.dotpath = dotpath
@@ -99,6 +102,8 @@ class Router():
         for update in self.rtable.get_updates():
             self.sock.sendto(str(update).encode(), (update.destination, self.port))
 
+        self.last_update = time.time()
+
     def handle_command(self, inp):
         cmdline = inp.split()
         if len(cmdline) == 0:
@@ -136,6 +141,9 @@ class Router():
             self.rtable.show_routes()
         elif cmd == 'links': # Extra: show links
             self.rtable.show_links()
+        elif cmd == 'time': # Extra: show time until next update
+            delta = time.time() - self.last_update
+            print("{:0>8} left".format(str(datetime.timedelta(seconds=delta))))
         elif cmd == 'plot': # Extra: plot topology
             self.rtable.plot(self.dotpath + "/" + self.ip)
         else:

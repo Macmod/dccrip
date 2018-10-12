@@ -6,17 +6,16 @@ from message import *
 import logging
 
 class RoutingTable:
-    def __init__(self, ip, timeout, lock):
+    def __init__(self, ip, removal_time, lock):
         self.routes = dd(lambda: dd(lambda: -1))
         self.links = dd(lambda: -1)
         self.timers = dd(lambda: -1)
 
         self.ip = ip
-        self.timeout = timeout
+        self.removal_time = removal_time
         self.lock = lock
 
         self.dot = Digraph()
-        self.dot.node('root', label=self.ip, style='filled', color='lightgrey')
 
     def add_link(self, ip, weight):
         if ip == self.ip:
@@ -31,7 +30,7 @@ class RoutingTable:
 
         self.links[ip] = weight
 
-        self.timers[ip] = Timer(self.timeout, self.__del_routes_closure(ip))
+        self.timers[ip] = Timer(self.removal_time, self.__del_routes_closure(ip))
         self.timers[ip].start()
 
         return True
@@ -77,7 +76,7 @@ class RoutingTable:
     def update_routes(self, via, distances):
         self.timers[via].cancel()
 
-        self.timers[via] = Timer(self.timeout, self.__del_routes_closure(via))
+        self.timers[via] = Timer(self.removal_time, self.__del_routes_closure(via))
         self.timers[via].start()
 
         for dest in distances:
@@ -150,6 +149,9 @@ class RoutingTable:
 
     def plot(self, path):
         self.dot.clear()
+        self.dot.node('root', label=self.ip, style='filled',
+                      color='lightgrey')
+
         for link in self.links:
             self.dot.node(link, label=link)
             self.dot.edge('root', link, label=str(self.links[link]))
