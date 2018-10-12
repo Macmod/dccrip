@@ -94,6 +94,8 @@ class Router():
         self.update_timer = Timer(self.update_time, self.__broadcast_update_callback)
         self.update_timer.start()
 
+        self.last_update = time.time()
+
         self.lock.release()
 
     def broadcast_update(self):
@@ -101,8 +103,6 @@ class Router():
         # and send them to links
         for update in self.rtable.get_updates():
             self.sock.sendto(str(update).encode(), (update.destination, self.port))
-
-        self.last_update = time.time()
 
     def handle_command(self, inp):
         cmdline = inp.split()
