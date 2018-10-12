@@ -22,7 +22,8 @@ class Router():
         self.maxbuf = maxbuf
         self.logpath = logpath
         self.dotpath = dotpath
-        self.rtable = RoutingTable(ip, removal_time)
+        self.lock = Lock()
+        self.rtable = RoutingTable(ip, removal_time, self.lock)
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((ip, port))
@@ -41,8 +42,6 @@ class Router():
         self.selector = selectors.DefaultSelector()
         self.selector.register(sys.stdin, selectors.EVENT_READ, self.process_stdin)
         self.selector.register(self.sock, selectors.EVENT_READ, self.process_udp)
-
-        self.lock = Lock()
 
         if startupfile:
             logging.info('Running startup commands...')

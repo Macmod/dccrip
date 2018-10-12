@@ -6,12 +6,14 @@ from message import *
 import logging
 
 class RoutingTable:
-    def __init__(self, ip, timeout):
+    def __init__(self, ip, timeout, lock):
         self.routes = dd(lambda: dd(lambda: -1))
         self.links = dd(lambda: -1)
         self.timers = dd(lambda: -1)
-        self.timeout = timeout
+
         self.ip = ip
+        self.timeout = timeout
+        self.lock = lock
 
         self.dot = Digraph()
         self.dot.node('root', label=self.ip, style='filled', color='lightgrey')
@@ -29,27 +31,50 @@ class RoutingTable:
 
         self.links[ip] = weight
 
-        self.timers[ip] = Timer(self.timeout, lambda: self.del_routes(ip))
+        self.timers[ip] = Timer(self.timeout, self.__del_routes_closure(ip))
         self.timers[ip].start()
 
         return True
 
-    def del_routes(self, via):
-        for dest in self.routes:
-            if via in self.routes[dest]:
-                del self.routes[dest][via]
+    def add_route(self, dest, via, cost):
+        if dest == self.ip or dest == via or via not in self.links:
+            return False
+
+        route_cost = self.links[via] + cost
+        self.routes[dest][via] = route_cost
+
+        return True
 
     def del_link(self, ip):
         if ip in self.links:
             del self.links[ip]
+
+            self.timers[ip].cancel()
             del self.timers[ip]
 
         self.del_routes(ip)
 
+    def __del_routes_closure(self, via):
+        def destroyer():
+            self.lock.acquire()
+            self.del_routes(via)
+            self.lock.release()
+
+        return destroyer
+
+    def del_routes(self, via):
+        dests = list(self.routes.keys())
+        for dest in dests:
+            if via in self.routes[dest]:
+                del self.routes[dest][via]
+
+                if not self.routes[dest]:
+                    del self.routes[dest]
+
     def update(self, via, distances):
         self.timers[via].cancel()
 
-        self.timers[via] = Timer(self.timeout, lambda: self.del_routes(via))
+        self.timers[via] = Timer(self.timeout, self.__del_routes_closure(via))
         self.timers[via].start()
 
         for dest in distances:
@@ -118,15 +143,6 @@ class RoutingTable:
 
             # Yield update to caller
             yield msg
-
-    def add_route(self, dest, via, cost):
-        if dest == self.ip or dest == via or via not in self.links:
-            return False
-
-        route_cost = self.links[via] + cost
-        self.routes[dest][via] = route_cost
-
-        return True
 
     def plot(self, path):
         self.dot.clear()
