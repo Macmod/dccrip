@@ -1,18 +1,18 @@
 #!/bin/sh
 
 # Setup window
-tmux new-session -d -s sample './router.py 127.0.0.2 1 tests/specstar/2.txt'
+tmux new-session -d -s sample 'python3.5 ./router.py 127.0.0.2 1 tests/specstar/2.txt'
 
 tmux select-window -t sample:0
 tmux rename-window 'Star Topology'
 
-tmux split-window -h './router.py 127.0.0.1 1 tests/specstar/1.txt'
+tmux split-window -h 'python3.5 ./router.py 127.0.0.1 1 tests/specstar/1.txt'
 
-tmux split-window -v -t 0 './router.py 127.0.0.4 1 tests/specstar/4.txt'
+tmux split-window -v -t 0 'python3.5 ./router.py 127.0.0.4 1 tests/specstar/4.txt'
 
-tmux split-window -v -t 1 './router.py 127.0.0.5 1 tests/specstar/5.txt'
+tmux split-window -v -t 1 'python3.5 ./router.py 127.0.0.5 1 tests/specstar/5.txt'
 
-tmux split-window -v -t 0 './router.py 127.0.0.3 1 tests/specstar/3.txt'
+tmux split-window -v -t 0 'python3.5 ./router.py 127.0.0.3 1 tests/specstar/3.txt'
 
 # tmux send-keys -t 4 'update' 'C-m'
 
