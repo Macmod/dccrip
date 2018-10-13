@@ -240,18 +240,18 @@ class Router():
 if __name__ == '__main__':
     # Arg parse
     parser = argparse.ArgumentParser(description='DCCRIP Router')
-    parser.add_argument('addr', metavar='ADDR', type=str,
+    parser.add_argument('ADDR', metavar='ADDR', type=str,
                         help='Router address.')
-    parser.add_argument('period', metavar='PERIOD', type=int,
+    parser.add_argument('PERIOD', metavar='PERIOD', type=int,
                         help='Send updates every N seconds.')
-    parser.add_argument('startup', nargs='?', metavar='FILE',
+    parser.add_argument('STARTUP', nargs='?', metavar='FILE',
                         help='File to read startup commands from.')
 
     args = parser.parse_args()
 
-    UPDATE_TIME = args.period
-    UDP_IP = args.addr
-    STARTUP = args.startup
+    UPDATE_TIME = args.PERIOD
+    UDP_IP = args.ADDR
+    STARTUP = args.STARTUP
     UDP_PORT = 55151
 
     # Validate parameters
