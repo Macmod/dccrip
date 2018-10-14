@@ -66,9 +66,9 @@ class Router():
         cost, gateways = self.rtable.get_best_gateways(msg.destination)
 
         if len(gateways) == 0:
-            if msg.type == 'data' or msg.type == 'trace':
+            if msg.source != self.ip and msg.type in ('data', 'trace'):
                 noroute = Message('data', self.ip, msg.source, {
-                    'payload': 'Hop ' + self.ip + ' has no route to ' + trace.destination + '.'
+                    'payload': 'Hop ' + self.ip + ' has no route to ' + msg.destination + '.'
                 })
 
                 self.send_message(noroute)
