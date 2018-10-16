@@ -138,7 +138,7 @@ class Router():
         elif cmd =='update': # Extra: explicit update command
             self.broadcast_update()
         elif cmd == 'data': # Extra: explicit send data command
-            if len(cmdline) < 2:
+            if len(cmdline) < 3:
                 logging.error('Wrong command: missing args.')
                 return
 
