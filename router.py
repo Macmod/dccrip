@@ -35,7 +35,7 @@ class Router():
         file_handler = logging.FileHandler(filename=self.logpath + '/' + self.ip + '.log')
         stdout_handler = logging.StreamHandler(sys.stdout)
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.WARNING,
             handlers=[stdout_handler, file_handler],
             format='[%(asctime)s] %(levelname)s: %(message)s',
         )
@@ -133,17 +133,27 @@ class Router():
                 logging.error('Wrong command: missing args.')
                 return
 
-            trace = Message(cmd, UDP_IP, cmdline[1], {'hops': []})
+            trace = Message(cmd, self.ip, cmdline[1], {'hops': []})
             self.send_message(trace)
         elif cmd =='update': # Extra: explicit update command
             self.broadcast_update()
+        elif cmd == 'data': # Extra: explicit send data command
+            if len(cmdline) < 2:
+                logging.error('Wrong command: missing args.')
+                return
+
+            dest = cmdline[1]
+            payload = ' '.join(cmdline[2:])
+
+            msg = Message('data', self.ip, dest, {'payload': payload})
+            self.send_message(msg)
         elif cmd == 'routes': # Extra: show topology
             self.rtable.show_routes()
         elif cmd == 'links': # Extra: show links
             self.rtable.show_links()
         elif cmd == 'time': # Extra: show time until next update
             delta = self.update_time - (time.time() - self.last_update)
-            print("{:0>8} until update".format(str(datetime.timedelta(seconds=delta))))
+            print("\n{:0>8} until update\n".format(str(datetime.timedelta(seconds=delta))))
         elif cmd == 'plot': # Extra: plot topology
             self.rtable.plot(self.dotpath + "/" + self.ip)
         else:
@@ -163,11 +173,7 @@ class Router():
 
     def handle_message(self, data, addr):
         ip, port = addr
-        if ip not in self.rtable.links:
-            logging.warning('Ignoring message from stranger: ' + ip + '.')
-            return
-        else:
-            logging.info('Message from ' + ip + ': ' + data)
+        logging.info('Message from ' + ip + ': ' + data)
 
         try:
             json_msg = json.loads(data)
@@ -193,7 +199,7 @@ class Router():
             msg = Message('data', src, dst, {'payload': payload})
 
             if msg.destination == self.ip:
-                logging.info('Data from ' + msg.source + ': ' + payload)
+                print(payload)
 
                 try:
                     trace = json.loads(json_msg['payload'])
@@ -203,7 +209,10 @@ class Router():
             else:
                 self.send_message(msg)
         elif mtype == 'update':
-            if 'distances' not in json_msg:
+            if ip not in self.rtable.links:
+                logging.warning('Ignoring update from stranger: ' + ip + '.')
+                return
+            elif 'distances' not in json_msg:
                 logging.error('Malformed message: no distances field.')
                 return
             elif src != ip:
