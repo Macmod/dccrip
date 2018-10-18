@@ -3,8 +3,9 @@ from message import Message
 from rtable import RoutingTable
 from collections import defaultdict as dd
 from threading import Timer, Lock
+from utils import IPv4
+from os import system
 import selectors
-import ipaddress
 import datetime
 import argparse
 import logging
@@ -35,7 +36,7 @@ class Router():
         file_handler = logging.FileHandler(filename=self.logpath + '/' + self.ip + '.log')
         stdout_handler = logging.StreamHandler(sys.stdout)
         logging.basicConfig(
-            level=logging.WARNING,
+            level=logging.INFO,
             handlers=[stdout_handler, file_handler],
             format='[%(asctime)s] %(levelname)s: %(message)s',
         )
@@ -74,6 +75,19 @@ class Router():
                 self.send_message(noroute)
 
             return False
+
+        # Decrement TTL
+        if msg.ttl is not None:
+            if msg.ttl > 0:
+                msg.ttl -= 1
+            else:
+                nottl = Message('data', self.ip, msg.source, {
+                    'payload': 'TTL exceeded at hop ' + self.ip + '.'
+                })
+
+                self.send_message(nottl)
+
+                return False
 
         # Load balancing
         gateway = random.choice(gateways)
@@ -133,7 +147,7 @@ class Router():
                 logging.error('Wrong command: missing args.')
                 return
 
-            trace = Message(cmd, self.ip, cmdline[1], {'hops': []})
+            trace = Message(cmd, self.ip, cmdline[1], {'hops': [self.ip]})
             self.send_message(trace)
         elif cmd =='update': # Extra: explicit update command
             self.broadcast_update()
@@ -147,13 +161,15 @@ class Router():
 
             msg = Message('data', self.ip, dest, {'payload': payload})
             self.send_message(msg)
-        elif cmd == 'routes': # Extra: show topology
+        elif cmd == 'routes': # Extra: show routes
             self.rtable.show_routes()
         elif cmd == 'links': # Extra: show links
             self.rtable.show_links()
         elif cmd == 'time': # Extra: show time until next update
             delta = self.update_time - (time.time() - self.last_update)
             print("\n{:0>8} until update\n".format(str(datetime.timedelta(seconds=delta))))
+        elif cmd == 'clear': # Extra: clear screen
+            system('clear')
         elif cmd == 'plot': # Extra: plot topology
             self.rtable.plot(self.dotpath + "/" + self.ip)
         else:
@@ -188,6 +204,10 @@ class Router():
         mtype = json_msg['type']
         src = json_msg['source']
         dst = json_msg['destination']
+        if 'ttl' in json_msg:
+            ttl = json_msg['ttl']
+        else:
+            ttl = None
 
         if mtype == 'data':
             if 'payload' not in json_msg:
@@ -196,16 +216,9 @@ class Router():
 
             payload = json_msg['payload']
 
-            msg = Message('data', src, dst, {'payload': payload})
-
+            msg = Message('data', src, dst, {'payload': payload, 'ttl': ttl})
             if msg.destination == self.ip:
                 print(payload)
-
-                try:
-                    trace = json.loads(json_msg['payload'])
-                    logging.info('Trace answered. Hops: ' + ' => '.join(trace['hops']))
-                except:
-                    pass
             else:
                 self.send_message(msg)
         elif mtype == 'update':
@@ -217,7 +230,7 @@ class Router():
                 return
             elif src != ip:
                 # Extra: anti-spoofing of update messages
-                logging.error(ip + ' tried to spoof the update! Ignoring...')
+                logging.warning(ip + ' tried to spoof the update! Ignoring...')
                 return
 
             self.rtable.update_routes(ip, json_msg['distances'])
@@ -226,7 +239,8 @@ class Router():
                 logging.error('Malformed message: no hops field.')
                 return
 
-            msg = Message('trace', src, dst, {'hops': json_msg['hops']})
+            hops = json_msg['hops']
+            msg = Message('trace', src, dst, {'hops': hops, 'ttl': ttl})
             self.handle_trace(msg)
         else:
             logging.error('Invalid message type `' + mtype + '`.')
@@ -248,26 +262,24 @@ class Router():
 
 if __name__ == '__main__':
     # Arg parse
-    parser = argparse.ArgumentParser(description='DCCRIP Router')
-    parser.add_argument('ADDR', metavar='ADDR', type=str,
-                        help='Router address.')
-    parser.add_argument('PERIOD', metavar='PERIOD', type=int,
-                        help='Send updates every N seconds.')
-    parser.add_argument('STARTUP', nargs='?', metavar='FILE',
+    parser = argparse.ArgumentParser(description='PremiumPro Router')
+    parser.add_argument('--addr', metavar='ADDR', type=str,
+                        required=True, help='Router address.')
+    parser.add_argument('--update-period', metavar='PERIOD', type=int,
+                        required=True, help='Send updates every N seconds.')
+    parser.add_argument('--startup-commands', metavar='FILE',
                         help='File to read startup commands from.')
 
     args = parser.parse_args()
 
-    UPDATE_TIME = args.PERIOD
-    UDP_IP = args.ADDR
-    STARTUP = args.STARTUP
+    UDP_IP = args.addr
     UDP_PORT = 55151
+    UPDATE_TIME = args.update_period
+    STARTUP = args.startup_commands
 
     # Validate parameters
-    try:
-        ipaddress.IPv4Address(UDP_IP)
-    except ValueError as e:
-        logging.error(str(e))
+    if not IPv4(UDP_IP):
+        logging.error('Invalid IP!')
         sys.exit(1)
 
     if UPDATE_TIME <= 0:

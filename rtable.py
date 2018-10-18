@@ -1,8 +1,8 @@
-#! /usr/bin/env python
 from collections import defaultdict as dd
 from threading import Timer
+from message import Message
+from utils import IPv4
 from graphviz import *
-from message import *
 import logging
 
 class RoutingTable:
@@ -18,7 +18,10 @@ class RoutingTable:
         self.dot = Digraph()
 
     def add_link(self, ip, weight):
-        if ip == self.ip:
+        if not IPv4(ip):
+            logging.error('Invalid IP!')
+            return False
+        elif ip == self.ip:
             logging.error('Cannot add self link!')
             return False
         elif ip in self.links:
@@ -45,6 +48,10 @@ class RoutingTable:
         return True
 
     def del_link(self, ip):
+        if not IPv4(ip):
+            logging.error('Invalid IP!')
+            return False
+
         if ip in self.links:
             del self.links[ip]
 
@@ -52,6 +59,7 @@ class RoutingTable:
             del self.timers[ip]
 
         self.del_routes_via(ip)
+        return True
 
     def del_route(self, dest, via):
         if dest in self.routes and via in self.routes[dest]:
