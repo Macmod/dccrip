@@ -5,9 +5,9 @@ startup='scripts/specstar'
 
 # Setup window
 tmux new-session -d -s sample "$exe --addr 127.0.0.2 --update-period 1 --startup-commands $startup/2.txt"
-tmux rename-window 'Star Topology'
+tmux rename-window 'Star Topology '
 
-tmux split-window -h "$exe --addr 127.0.0.1 --update-period 1 --startup-commands $startup/1.txt"
+tmux split-window -h "$exe --addr 127.0.0.1 --update-period 1 --startup-commands $startup/1.txt"    
 
 tmux split-window -v -t 0 "$exe --addr 127.0.0.4 --update-period 1 --startup-commands $startup/4.txt"
 
