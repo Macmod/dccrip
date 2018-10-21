@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 from message import Message
 from rtable import RoutingTable
 from collections import defaultdict as dd

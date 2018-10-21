@@ -4,8 +4,8 @@ exe='./router.py'
 startup='scripts/specstar'
 
 # Setup window
-tmux new-session -d -s sample "$exe --addr 127.0.0.2 --update-period 1 --startup-commands $startup/2.txt"
-tmux rename-window 'Star Topology '
+tmux new-session -d -s specstar "$exe --addr 127.0.0.2 --update-period 1 --startup-commands $startup/2.txt"
+tmux rename-window 'Star Topology'
 
 tmux split-window -h "$exe --addr 127.0.0.1 --update-period 1 --startup-commands $startup/1.txt"    
 
@@ -23,4 +23,4 @@ for i in {0..4}; do
 done
 
 # Attach
-tmux -2 attach-session -t sample
+tmux -2 attach-session -t specstar
