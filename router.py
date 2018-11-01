@@ -171,7 +171,8 @@ class Router():
         elif cmd == 'clear': # Extra: clear screen
             system('clear')
         elif cmd == 'plot': # Extra: plot topology
-            self.rtable.plot(self.dotpath + "/" + self.ip)
+            if not self.rtable.plot(self.dotpath + "/" + self.ip):
+                print("Graphviz is not installed.")
         else:
             logging.error('Invalid command `' + cmd + '`')
 

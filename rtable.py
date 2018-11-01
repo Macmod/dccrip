@@ -2,7 +2,13 @@ from collections import defaultdict as dd
 from threading import Timer
 from message import Message
 from utils import IPv4
-from graphviz import *
+try:
+    from graphviz import *
+    GRAPHVIZ = True
+except ImportError:
+    print('[x] Please install graphviz for topology plot support.')
+    GRAPHVIZ = False
+
 import logging
 
 class RoutingTable:
@@ -15,7 +21,10 @@ class RoutingTable:
         self.removal_time = removal_time
         self.lock = lock
 
-        self.dot = Digraph()
+        if GRAPHVIZ:
+            self.dot = Digraph()
+        else:
+            self.dot = None
 
     def add_link(self, ip, weight):
         if not IPv4(ip):
@@ -155,6 +164,9 @@ class RoutingTable:
             yield msg
 
     def plot(self, path):
+        if not self.dot:
+            return False
+
         self.dot.clear()
         self.dot.node('root', label=self.ip, style='filled',
                       color='lightgrey')
@@ -171,6 +183,7 @@ class RoutingTable:
                 )
 
         self.dot.render(path)
+        return True
 
     def show_links(self):
         print('\nADDRESS\tWEIGHT')
