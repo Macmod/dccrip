@@ -1,25 +1,18 @@
 #!/bin/sh
+set -eu
 
-exe='./router.py'
-startup='scripts/mesh'
+exe="./router.py"
+startup="scripts/mesh"
+updatetime=$1
 
-# Setup window
+tmux new-session -x 2000 -y 2000 -d -s mesh "$exe --addr 127.0.0.1 --update-period $updatetime --startup-commands $startup/1.txt" &&
+tmux select-layout -t mesh tiled
 
-tmux new-session -x 2000 -y 2000 -d -s mesh "$exe --addr 127.0.0.1 --update-period 6 --startup-commands $startup/1.txt"
-tmux rename-window 'Mesh Topology'
+tmux rename-window -t mesh 'Mesh Topology'
 
 for i in $(seq 2 9); do
-    tmux split-window -v "$exe --addr 127.0.0.$i --update-period 6 --startup-commands $startup/$i.txt"
+    tmux split-window -t mesh -v "$exe --addr 127.0.0.$i --update-period $updatetime --startup-commands $startup/$i.txt" &&
+    tmux select-layout -t mesh tiled
 done
 
-tmux select-layout tiled
-
-sleep 3
-
-# Plot topology
-for i in {0..8}; do
-    tmux send-keys -t $i 'plot' 'C-m'
-done
-
-# Attach
-tmux -2 attach-session -t mesh
+tmux -2 attach -t mesh
