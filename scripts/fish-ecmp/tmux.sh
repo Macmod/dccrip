@@ -5,7 +5,7 @@ exe="./router.py"
 startup="scripts/fish-ecmp"
 updatetime=$1
 
-tmux new-session -x 2000 -y 2000 -d -s fishecmp "$exe --addr 127.0.0.1 --update-period $updatetime --startup-commands $startup/1.txt" &&
+tmux new-session -x 2000 -y 2000 -d -s fishecmp "$exe --addr 127.0.1.1 --update-period $updatetime --startup-commands $startup/1.txt" &&
 tmux select-layout -t fishecmp even-vertical
 
 tmux rename-window -t fishecmp 'Fish ECMP Topology'
