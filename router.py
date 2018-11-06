@@ -69,7 +69,7 @@ class Router():
         if len(gateways) == 0:
             if msg.source != self.ip and msg.type in ('data', 'trace'):
                 noroute = Message('data', self.ip, msg.source, {
-                    'payload': 'Hop ' + self.ip + ' has no route to ' + msg.destination + '.'
+                    'payload': 'No route to ' + msg.destination + '.'
                 })
 
                 self.send_message(noroute)
@@ -82,7 +82,7 @@ class Router():
                 msg.ttl -= 1
             else:
                 nottl = Message('data', self.ip, msg.source, {
-                    'payload': 'TTL exceeded at hop ' + self.ip + '.'
+                    'payload': 'TTL exceeded.'
                 })
 
                 self.send_message(nottl)
