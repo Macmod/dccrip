@@ -270,7 +270,7 @@ class Router():
 
 if __name__ == '__main__':
     # Arg parse
-    parser = argparse.ArgumentParser(description='PremiumPro Router')
+    parser = argparse.ArgumentParser(description='Premium Router')
     parser.add_argument('--addr', metavar='ADDR', type=str,
                         required=True, help='Router address.')
     parser.add_argument('--update-period', metavar='PERIOD', type=int,
