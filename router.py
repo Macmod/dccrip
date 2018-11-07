@@ -41,7 +41,7 @@ class Router():
         file_handler = logging.FileHandler(filename=self.logpath + '/' + self.ip + '.log')
         stdout_handler = logging.StreamHandler(sys.stdout)
         logging.basicConfig(
-            level=logging.INFO,
+            level=logging.ERROR,
             handlers=[stdout_handler, file_handler],
             format='[%(asctime)s] %(levelname)s: %(message)s',
         )
