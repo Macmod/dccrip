@@ -4,7 +4,7 @@ from rtable import RoutingTable
 from collections import defaultdict as dd
 from threading import Timer, Lock
 from utils import IPv4
-from os import system
+from os import system, path, makedirs
 import selectors
 import datetime
 import argparse
@@ -15,6 +15,7 @@ import json
 import time
 import sys
 
+# Router class: manages router behavior
 class Router():
     def __init__(self, ip, port, update_time, removal_time, maxbuf=2**16,
                  logpath='logs', dotpath='dot', startupfile=None):
@@ -32,6 +33,10 @@ class Router():
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((ip, port))
 
+        # Create logging dir if it doesn't exist
+        if not path.exists(logpath):
+            makedirs(logpath)
+
         # Setup logging
         file_handler = logging.FileHandler(filename=self.logpath + '/' + self.ip + '.log')
         stdout_handler = logging.StreamHandler(sys.stdout)
@@ -43,10 +48,12 @@ class Router():
 
         logging.info('Binding to ' + ip + ':' + str(port))
 
+        # I/O Multiplexing
         self.selector = selectors.DefaultSelector()
         self.selector.register(sys.stdin, selectors.EVENT_READ, self.process_stdin)
         self.selector.register(self.sock, selectors.EVENT_READ, self.process_udp)
 
+        # Startup commands
         if startupfile:
             logging.info('Running startup commands...')
 
