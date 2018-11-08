@@ -4,7 +4,7 @@ from rtable import RoutingTable
 from collections import defaultdict as dd
 from threading import Timer, Lock
 from utils import IPv4
-from os import system, path, makedirs
+from os import system, path, makedirs, _exit
 import selectors
 import datetime
 import argparse
@@ -141,7 +141,7 @@ class Router():
             weight = int(cmdline[2])
 
             if not self.rtable.add_link(ip, weight):
-                sys.exit(1)
+                _exit(1)
         elif cmd == 'del':
             if len(cmdline) < 2:
                 logging.error('Wrong command: missing args.')
@@ -180,6 +180,8 @@ class Router():
         elif cmd == 'plot': # Extra: plot topology
             if not self.rtable.plot(self.dotpath + "/" + self.ip):
                 print("Graphviz is not installed.")
+        elif cmd == 'quit':
+            _exit(0)
         else:
             logging.error('Invalid command `' + cmd + '`')
 
